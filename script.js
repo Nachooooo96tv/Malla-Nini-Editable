@@ -81,11 +81,25 @@ function guardarEstado() {
 
 function cargarEstado() {
   const data = localStorage.getItem("estadoMallaEnfUDLA");
+  let estadoValido = true;
+
   if (data) {
-    estado = JSON.parse(data);
-  } else {
-    Object.values(asignaturasPorSemestre).flat().forEach(r => estado[r.codigo] = false);
+    try {
+      const cargado = JSON.parse(data);
+      const codigosValidos = Object.values(asignaturasPorSemestre).flat().map(r => r.codigo);
+      estadoValido = codigosValidos.every(c => c in cargado);
+      if (estadoValido) {
+        estado = cargado;
+        return;
+      }
+    } catch {
+      estadoValido = false;
+    }
   }
+
+  // Si no hay estado válido, inicializa en falso
+  estado = {};
+  Object.values(asignaturasPorSemestre).flat().forEach(r => estado[r.codigo] = false);
 }
 
 function crearMalla() {
@@ -99,7 +113,7 @@ function crearMalla() {
 
     const titulo = document.createElement("h2");
     titulo.className = "titulo-semestre";
-    titulo.textContent = semestre;
+    titulo.textContent = `⭐ ${semestre} ⭐`;
     bloque.appendChild(titulo);
 
     const contenedor = document.createElement("div");
@@ -107,7 +121,7 @@ function crearMalla() {
 
     ramos.forEach(ramo => {
       const div = document.createElement("div");
-      div.className = "card" + (ramo.codigo.startsWith("PRACT") || ramo.codigo.startsWith("SEM") || ramo.codigo.startsWith("INT") ? " especial" : "");
+      div.className = "card" + (ramo.codigo.startsWith("PRACT") || ramo.codigo.startsWith("SEM") || ramo.codigo.startsWith("INT") || ramo.codigo === "PREXT" ? " especial" : "");
       div.id = ramo.codigo;
       div.textContent = `${ramo.codigo}\n${ramo.nombre}`;
       div.addEventListener("click", () => {
@@ -133,7 +147,7 @@ function actualizarVista() {
     const aprobado = estado[ramo.codigo];
     const habilitado = ramo.prereqs.every(req => estado[req]);
     div.classList.toggle("active", aprobado);
-    div.classList.toggle("locked", !aprobado && !habilitado && ramo.prereqs.length > 0);
+    div.classList.toggle("locked", !aprobado && !habilitado);
   });
 }
 
