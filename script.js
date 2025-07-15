@@ -16,64 +16,51 @@ const asignaturas = [
   { codigo: "ENF302", nombre: "Patología", prereqs: ["ENF301"] },
   { codigo: "ENF404", nombre: "Proc. Atención Enfermería II", prereqs: ["ENF301", "ENF302"] },
   { codigo: "ENF403", nombre: "Fisiología General", prereqs: ["VYF101", "CBI202"] },
-  // Agrega el resto de los ramos aquí si lo deseas
 ];
 
 let estado = {};
 
 function guardarEstado() {
-  localStorage.setItem("estadoMallaEnfermeria", JSON.stringify(estado));
+  localStorage.setItem("estadoMallaEnfUDLA", JSON.stringify(estado));
 }
 
 function cargarEstado() {
-  const data = localStorage.getItem("estadoMallaEnfermeria");
+  const data = localStorage.getItem("estadoMallaEnfUDLA");
   if (data) {
     estado = JSON.parse(data);
   } else {
-    asignaturas.forEach((r) => (estado[r.codigo] = false));
+    asignaturas.forEach(r => estado[r.codigo] = false);
   }
 }
 
 function crearMalla() {
   cargarEstado();
   const malla = document.getElementById("malla");
-  malla.innerHTML = ""; // Limpiar por si acaso
-
-  asignaturas.forEach((ramo) => {
+  malla.innerHTML = "";
+  asignaturas.forEach(ramo => {
     const div = document.createElement("div");
     div.className = "card";
     div.id = ramo.codigo;
     div.textContent = `${ramo.codigo}\n${ramo.nombre}`;
-    div.addEventListener("click", () => toggleRamo(ramo.codigo));
+    div.addEventListener("click", () => {
+      if (!div.classList.contains("locked")) {
+        estado[ramo.codigo] = !estado[ramo.codigo];
+        guardarEstado();
+        actualizarVista();
+      }
+    });
     malla.appendChild(div);
   });
-
-  actualizarVista();
-}
-
-function toggleRamo(codigo) {
-  estado[codigo] = !estado[codigo];
-  guardarEstado();
   actualizarVista();
 }
 
 function actualizarVista() {
-  asignaturas.forEach((ramo) => {
+  asignaturas.forEach(ramo => {
     const div = document.getElementById(ramo.codigo);
     const aprobado = estado[ramo.codigo];
-    const habilitado = ramo.prereqs.every((req) => estado[req]);
-
-    if (aprobado) {
-      div.classList.add("active");
-      div.classList.remove("locked");
-    } else {
-      div.classList.remove("active");
-      if (habilitado) {
-        div.classList.remove("locked");
-      } else {
-        div.classList.add("locked");
-      }
-    }
+    const habilitado = ramo.prereqs.every(req => estado[req]);
+    div.classList.toggle("active", aprobado);
+    div.classList.toggle("locked", !aprobado && !habilitado);
   });
 }
 
