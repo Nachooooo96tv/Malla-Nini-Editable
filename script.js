@@ -133,7 +133,7 @@ function actualizarVista() {
     const aprobado = estado[ramo.codigo];
     const habilitado = ramo.prereqs.every(req => estado[req]);
     div.classList.toggle("active", aprobado);
-    div.classList.toggle("locked", !aprobado && !habilitado);
+    div.classList.toggle("locked", !aprobado && !habilitado && ramo.prereqs.length > 0);
   });
 }
 
