@@ -81,25 +81,11 @@ function guardarEstado() {
 
 function cargarEstado() {
   const data = localStorage.getItem("estadoMallaEnfUDLA");
-  let estadoValido = true;
-
   if (data) {
-    try {
-      const cargado = JSON.parse(data);
-      const codigosValidos = Object.values(asignaturasPorSemestre).flat().map(r => r.codigo);
-      estadoValido = codigosValidos.every(c => c in cargado);
-      if (estadoValido) {
-        estado = cargado;
-        return;
-      }
-    } catch {
-      estadoValido = false;
-    }
+    estado = JSON.parse(data);
+  } else {
+    Object.values(asignaturasPorSemestre).flat().forEach(r => estado[r.codigo] = false);
   }
-
-  // Si no hay estado válido, inicializa en falso
-  estado = {};
-  Object.values(asignaturasPorSemestre).flat().forEach(r => estado[r.codigo] = false);
 }
 
 function crearMalla() {
@@ -113,7 +99,7 @@ function crearMalla() {
 
     const titulo = document.createElement("h2");
     titulo.className = "titulo-semestre";
-    titulo.textContent = `⭐ ${semestre} ⭐`;
+    titulo.textContent = semestre;
     bloque.appendChild(titulo);
 
     const contenedor = document.createElement("div");
@@ -121,7 +107,7 @@ function crearMalla() {
 
     ramos.forEach(ramo => {
       const div = document.createElement("div");
-      div.className = "card" + (ramo.codigo.startsWith("PRACT") || ramo.codigo.startsWith("SEM") || ramo.codigo.startsWith("INT") || ramo.codigo === "PREXT" ? " especial" : "");
+      div.className = "card" + (ramo.codigo.startsWith("PRACT") || ramo.codigo.startsWith("SEM") || ramo.codigo.startsWith("INT") ? " especial" : "");
       div.id = ramo.codigo;
       div.textContent = `${ramo.codigo}\n${ramo.nombre}`;
       div.addEventListener("click", () => {
@@ -144,10 +130,18 @@ function crearMalla() {
 function actualizarVista() {
   Object.values(asignaturasPorSemestre).flat().forEach(ramo => {
     const div = document.getElementById(ramo.codigo);
+    const tienePrerreqs = ramo.prereqs.length > 0;
+    const prerreqsAprobados = ramo.prereqs.every(req => estado[req]);
     const aprobado = estado[ramo.codigo];
-    const habilitado = ramo.prereqs.every(req => estado[req]);
-    div.classList.toggle("active", aprobado);
-    div.classList.toggle("locked", !aprobado && !habilitado);
+    
+    // Mostrar activo sólo si está aprobado y tiene prerrequisitos aprobados (o no tiene prerrequisitos)
+    const mostrarActivo = aprobado && (!tienePrerreqs || prerreqsAprobados);
+    
+    // Bloquear si no está activo y no tiene prerrequisitos aprobados
+    const bloquear = !mostrarActivo && !prerreqsAprobados;
+
+    div.classList.toggle("active", mostrarActivo);
+    div.classList.toggle("locked", bloquear);
   });
 }
 
